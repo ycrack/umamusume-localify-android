@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="pref_cate_logger">Logger</string>
+    <string name="perf_enable_carrotjuicer">Enable CarrotJuicer</string>
     <string name="pref_enable_logger">Enable logger</string>
     <string name="oref_dump_static_entries">Dump static entries</string>
     <string name="oref_dump_db_entries">Dump database entries</string>

@@ -6,6 +6,7 @@
 #include "localify/localify.h"
 #include "logger/logger.h"
 #include "config.hpp"
+#include <sys/stat.h>
 
 using namespace std;
 using namespace localify;
@@ -34,6 +35,7 @@ bool g_restore_notification = false;
 std::unordered_map<std::string, ReplaceAsset> g_replace_assets;
 std::string g_replace_assetbundle_file_path;
 std::string text_id_dict;
+bool g_enable_carrotjuicer = true;
 
 bool isGame(const char *pkgNm) {
     if (!pkgNm)
@@ -70,6 +72,12 @@ void dlopen_process(const char *name, void *handle) {
         if (name != nullptr && strstr(name, "libil2cpp.so")) {
             il2cpp_handle = handle;
             LOGI("Got il2cpp handle!");
+        }
+    }
+    if (!native_handle) {
+        if (name != nullptr && strstr(name, "libnative.so")) {
+            native_handle = handle;
+            LOGI("Got native handle!");
         }
     }
     if (name != nullptr && strstr(name, "libcri_ware_unity.so") && !isCriWareInit) {
@@ -228,6 +236,45 @@ HOOK_DEF(void*, NativeBridgeLoadLibraryExt_V30, const char *filename, int flag,
     return orig_NativeBridgeLoadLibraryExt_V30(filename, flag, ns);
 }
 
+void write_file(const std::string &file_path, const char *buffer, const int len) {
+    std::ofstream file{file_path, std::ios::binary};
+    file.write(buffer, len);
+    file.close();
+
+    if (std::filesystem::exists(file_path)) {
+        LOGI("wrote file: [%ju] %s", std::filesystem::file_size(file_path.c_str()), file_path.c_str());
+    }
+}
+
+std::string current_time() {
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
+    return std::to_string(ms.count());
+}
+
+HOOK_DEF(int, LZ4_decompress_safe_ext, char *src, char *dst, int compressedSize, int dstCapacity) {
+    int ret = orig_LZ4_decompress_safe_ext(src, dst, compressedSize, dstCapacity);
+    auto out_path = string("/sdcard/Android/data/").append(Game::GetCurrentPackageName())
+            .append("/CarrotJuicer/").append(current_time()).append("R.msgpack");
+
+    LOGI("[R] cmp=%d, dst=%d, ret=%d => %s", compressedSize, dstCapacity, ret, out_path.c_str());
+    write_file(out_path, dst, ret);
+
+    return ret;
+}
+
+HOOK_DEF(int, LZ4_compress_default_ext, char *src, char *dst, int srcSize, int dstCapacity) {
+    int ret = orig_LZ4_compress_default_ext(src, dst, srcSize, dstCapacity);
+    auto out_path = string("/sdcard/Android/data/").append(Game::GetCurrentPackageName())
+            .append("/CarrotJuicer/").append(current_time()).append("Q.msgpack");
+
+    LOGI("[Q] src=%d, dst=%d, ret=%d => %s", srcSize, dstCapacity, ret, out_path.c_str());
+    write_file(out_path, src, srcSize);
+
+    return ret;
+}
+
 std::optional<std::vector<std::string>> read_config() {
     std::ifstream config_stream{
             string("/sdcard/Android/data/").append(Game::GetCurrentPackageName()).append(
@@ -366,6 +413,18 @@ std::optional<std::vector<std::string>> read_config() {
                 dicts.emplace_back(dict);
             }
         }
+
+        if (document.HasMember("enableCarrotJuicer")) {
+            auto dir = string("/sdcard/Android/data/").append(Game::GetCurrentPackageName()).append("/CarrotJuicer/");
+            if (!filesystem::exists(dir)) {
+                if (mkdir(dir.c_str(), 2770)) {
+                    LOGI("%s created.", dir.c_str());
+                } else {
+                    LOGE("%s", strerror(errno));
+                }
+            }
+            g_enable_carrotjuicer = document["enableCarrotJuicer"].GetBool();
+        }
     }
 
     config_stream.close();
@@ -478,7 +537,7 @@ void hack_thread(void *arg [[maybe_unused]]) {
     if (IsABIRequiredNativeBridge()) {
         return;
     }
-    while (!il2cpp_handle) {
+    while (!il2cpp_handle || !native_handle) {
         sleep(1);
     }
     // prevent crash
@@ -498,6 +557,11 @@ void hack_thread(void *arg [[maybe_unused]]) {
     il2cpp_hook();
     // });
     // init_thread.detach();
+
+    if (g_enable_carrotjuicer) {
+        ENABLE_HOOK(native_handle, LZ4_decompress_safe_ext)
+        ENABLE_HOOK(native_handle, LZ4_compress_default_ext)
+    }
 }
 
 void hack_settings_thread(void *arg [[maybe_unused]]) {

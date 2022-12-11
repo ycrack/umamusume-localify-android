@@ -11,6 +11,12 @@
     <PreferenceCategory android:title="@string/pref_cate_logger">
 
         <SwitchPreference
+            android:defaultValue="true"
+            android:icon="@drawable/ic_archive"
+            android:key="enableCarrotJuicer"
+            android:title="@string/perf_enable_carrotjuicer" />
+
+        <SwitchPreference
             android:defaultValue="false"
             android:icon="@drawable/ic_logger"
             android:key="enableLogger"

@@ -22,5 +22,6 @@
         "localized_data/kor_race.json",
         "localized_data/kor_story.json",
         "localized_data/kor_umastory.json"
-    ]
+    ],
+    "enableCarrotJuicer": true
 }

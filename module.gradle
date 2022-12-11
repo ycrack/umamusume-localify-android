@@ -2,11 +2,11 @@ ext {
     moduleLibraryName = "umamusume-localify-android"
     magiskModuleId = "umamusume_localify"
     moduleName = "UmamusumeLocalify"
-    moduleAuthor = "Kimjio"
-    moduleDescription = "umamusume-localify"
-    moduleVersion = "2.7.2"
-    moduleVersionCode = 20
-    moduleUpdateJson = "https://raw.githubusercontent.com/Kimjio/umamusume-localify-android/main/update"
+    moduleAuthor = "Kimjio & ycrack"
+    moduleDescription = "umamusume-localify (with carrotjuicer)"
+    moduleVersion = "2.7.2-carrotjuicer"
+    moduleVersionCode = 320 // origin + 300
+    moduleUpdateJson = "https://raw.githubusercontent.com/ycrack/umamusume-localify-android/carrotjuicer/update"
 
     // Riru
     /* Minimal supported Riru API version, used in the version check of riru.sh */
