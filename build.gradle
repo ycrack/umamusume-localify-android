@@ -12,7 +12,8 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.0-alpha09'
+        //noinspection AndroidGradlePluginVersion
+        classpath 'com.android.tools.build:gradle:7.4.0-rc01'
     }
 }
 
