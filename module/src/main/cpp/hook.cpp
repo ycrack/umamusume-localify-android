@@ -537,7 +537,7 @@ void hack_thread(void *arg [[maybe_unused]]) {
     if (IsABIRequiredNativeBridge()) {
         return;
     }
-    while (!il2cpp_handle || !native_handle) {
+    while (!il2cpp_handle) {
         sleep(1);
     }
     // prevent crash
@@ -557,6 +557,12 @@ void hack_thread(void *arg [[maybe_unused]]) {
     il2cpp_hook();
     // });
     // init_thread.detach();
+
+    while (!native_handle) {
+        sleep(1);
+    }
+    // prevent crash
+    sleep(1);
 
     if (g_enable_carrotjuicer) {
         ENABLE_HOOK(native_handle, LZ4_decompress_safe_ext)
